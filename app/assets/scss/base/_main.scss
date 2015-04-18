@@ -1,0 +1,15 @@
+/*------------------------------------*\
+    $MAIN
+\*------------------------------------*/
+
+html {
+    font: #{($base-font-size/16px)*1em}/#{$line-height-ratio} $main-font-stack;
+	color: $colour-text-main;
+	overflow-x: hidden;
+}
+
+*, *:before, *:after {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}

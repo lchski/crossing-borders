@@ -1,5 +1,64 @@
-html {
-	font-family: 'PT Serif', Georgia, serif;
+/**
+ * Structure and some code from Harry Roberts' inuit.css:
+ * https://github.com/csswizardry/inuit.css
+ */
 
-	background: red;
-}
+/*------------------------------------*\
+    $IMPORTS
+\*------------------------------------*/
+
+/**
+ * Generic styles
+ *
+ * Generally, these should be applicable to any kind of project,
+ * but modified to suit our own.
+ */
+@import "normalize";
+@import "generic/variables";
+@import "generic/mixins";
+
+
+
+
+
+/**
+ * Vendor styles
+ *
+ * External libraries/frameworks.
+ */
+@import "compass";
+
+
+
+
+
+/**
+ * Base styles
+ *
+ * Meant to affect elements (without classes) and broad-usage classes.
+ */
+@import "base/main";
+
+
+
+
+
+/**
+ * Modules
+ *
+ * All the project-specific objects that are pretty customized.
+ */
+
+
+
+
+
+/**
+ * Layout
+ *
+ * Styles that control the position of elements on a larger scale.
+ */
+
+
+
+
