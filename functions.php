@@ -3,7 +3,7 @@
 /**
  * Path to functions.php folder
  */
-$pd_lib_directory = get_template_directory() . '/app/lib/';
+$cb_lib_directory = get_template_directory() . '/app/lib/';
 
 /**
  * Vendor code
@@ -18,7 +18,7 @@ $pd_lib_directory = get_template_directory() . '/app/lib/';
 /**
  * Theme-related set-up
  */
-require_once $pd_lib_directory . 'styles.php';
+require_once $cb_lib_directory . 'styles.php';
 
 /**
  * Make the experience nicer
