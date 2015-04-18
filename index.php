@@ -1,4 +1,4 @@
-<?php get_header(); ?>
+<?php get_header( 'no-menu' ); ?>
 
 <main>
 	<header class="site-intro">
@@ -9,6 +9,8 @@
 		<a href="#">Learn about our events</a>
 		<a href="#">Run your own event</a>
 	</header>
+
+	<?php get_header( 'fragment-menu' ); ?>
 </main>
 
 <?php get_footer(); ?>
