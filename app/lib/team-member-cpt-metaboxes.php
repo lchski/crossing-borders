@@ -1,9 +1,17 @@
 <?php
 
 /**
+ * CURRENTLY NON-FUNCTIONAL, INTENTIONALLY
+ *
+ * Todo: Create <select> field type populated with all posts in “Team Member Interview” category.
+ *
+ * Uncomment `add_action` line to make functional.
+ */
+
+/**
  * Add custom author metabox (via cmb2 library)
  */
-add_action( 'cmb2_init', 'cb_add_team_member_metabox' );
+// add_action( 'cmb2_init', 'cb_add_team_member_metabox' );
 
 function cb_add_team_member_metabox() {
 

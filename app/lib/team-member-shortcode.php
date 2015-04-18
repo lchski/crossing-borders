@@ -1,6 +1,14 @@
 <?php
 
-add_shortcode( 'team-members', 'cb_team_member_shortcode' );
+/**
+ * CURRENTLY NON-FUNCTIONAL, INTENTIONALLY
+ *
+ * Todo: alter $team_member_query_args to be less specific; modify markup to be what we need.
+ *
+ * Uncomment `add_shortcode` line to make functional.
+ */
+
+// add_shortcode( 'team-members', 'cb_team_member_shortcode' );
 
 function cb_team_member_shortcode() {
 	global $current_issue;
