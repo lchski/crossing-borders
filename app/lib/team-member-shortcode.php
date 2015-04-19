@@ -8,7 +8,7 @@
  * Uncomment `add_shortcode` line to make functional.
  */
 
-// add_shortcode( 'team-members', 'cb_team_member_shortcode' );
+add_shortcode( 'team-members', 'cb_team_member_shortcode' );
 
 function cb_team_member_shortcode() {
 	global $current_issue;
@@ -17,29 +17,7 @@ function cb_team_member_shortcode() {
 
 	$team_member_query_args = array(
 		'post_type'      => 'team-member',
-		'orderby'        => array( 'meta_key', 'title' ),
-		'order'          => 'DESC',
 		'posts_per_page' => -1, // bring in all team members
-		'tax_query'      => array(
-			array(
-				'taxonomy' => 'issue',
-				'field'    => 'slug',
-				'terms'    => $current_issue->slug,
-			),
-		),
-		'meta_query' => array(
-			'relation' => 'OR',
-			array(
-				'key'     => '_cb_team_member_special',
-				'compare' => '=',
-				'value'   => 'on',
-			),
-			array(
-				'key'     => '_cb_team_member_special',
-				'compare' => 'NOT EXISTS',
-				'value'   => 'off',
-			),
-		),
 	);
 
 	$team_member_query = new WP_Query( $team_member_query_args );
@@ -61,7 +39,7 @@ function cb_team_member_shortcode() {
 						$output .= get_the_post_thumbnail();
 
 					} else {
-						$output .= '<img src="' . get_stylesheet_directory_uri() . '/assets/img/no-avatar.gif' . '">';
+						$output .= '<img src="' . get_stylesheet_directory_uri() . '/assets/img/no-avatar.jpg' . '">';
 					}
 
 				$output .= '</div>';
@@ -82,6 +60,7 @@ function cb_team_member_shortcode() {
 
 			$output .= '</div>';
 		}
+
 		wp_reset_postdata();
 
 		$output .= '</div>';
