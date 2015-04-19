@@ -1,8 +1,14 @@
 <?php
-
 /**
- * CMB field class
+ * CMB2 Utilities
+ *
  * @since  1.1.0
+ *
+ * @category  WordPress_Plugin
+ * @package   CMB2
+ * @author    WebDevStudios
+ * @license   GPL-2.0+
+ * @link      http://webdevstudios.com
  */
 class CMB2_Utils {
 
@@ -126,7 +132,7 @@ class CMB2_Utils {
 	 * @return bool         True or false
 	 */
 	public function isempty( $value ) {
-		return is_null( $value ) || '' === $value || false === $value;
+		return null === $value || '' === $value || false === $value;
 	}
 
 	/**
@@ -147,7 +153,7 @@ class CMB2_Utils {
 	 * This may need to be filtered for local Window installations.
 	 * If resources do not load, please check the wiki for details.
 	 * @since  1.0.1
-	 * @return string URL to CMB resources
+	 * @return string URL to CMB2 resources
 	 */
 	public function url( $path = '' ) {
 		if ( $this->url ) {

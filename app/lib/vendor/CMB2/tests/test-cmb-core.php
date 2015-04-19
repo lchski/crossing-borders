@@ -1,8 +1,16 @@
 <?php
+/**
+ * CMB2 core tests
+ *
+ * @package   Tests_CMB2
+ * @author    WebDevStudios
+ * @license   GPL-2.0+
+ * @link      http://webdevstudios.com
+ */
 
 require_once( 'cmb-tests-base.php' );
 
-class CMB2_Core_Test extends CMB2_Test {
+class Test_CMB2_Core extends Test_CMB2 {
 
 	/**
 	 * Set up the test fixture
@@ -54,19 +62,21 @@ class CMB2_Core_Test extends CMB2_Test {
 		);
 
 		$this->defaults = array(
-			'id'               => $this->cmb_id,
-			'title'            => false,
-			'type'             => false,
-			'object_types'     => array(),
-			'context'          => 'normal',
-			'priority'         => 'high',
-			'show_names'       => 1,
-			'cmb_styles'       => 1,
-			'fields'           => array(),
-			'hookup'           => 1,
-			'closed'           => false,
-			'new_user_section' => 'add-new-user',
-			'show_on'          => array(),
+			'id'           => $this->cmb_id,
+			'title'        => '',
+			'type'         => '',
+			'object_types' => array(), // Post type
+			'context'      => 'normal',
+			'priority'     => 'high',
+			'show_names'   => true, // Show field names on the left
+			'show_on'      => array(), // Specific post IDs or page templates to display this metabox
+			'show_on_cb'   => null, // Callback to determine if metabox should display. Overrides 'show_on'
+			'cmb_styles'   => true, // Include cmb bundled stylesheet
+			'fields'       => array(),
+			'hookup'       => true,
+			'save_fields'  => true, // Will not save during hookup if false
+			'closed'       => false, // Default to metabox being closed?
+			'new_user_section' => 'add-new-user', // or 'add-existing-user'
 		);
 
 		$this->cmb = new CMB2( $this->metabox_array );
@@ -87,12 +97,14 @@ class CMB2_Core_Test extends CMB2_Test {
 		parent::tearDown();
 	}
 
-	public function test_cmb2_is_loaded() {
-		$this->assertTrue( defined( 'CMB2_LOADED' ) );
-	}
-
-	public function test_cmb2_has_version_number() {
-		$this->assertTrue( defined( 'CMB2_VERSION' ) );
+	public function test_cmb2_definitions() {
+		foreach ( array(
+			'CMB2_LOADED',
+			'CMB2_VERSION',
+			'CMB2_DIR',
+		) as $key => $definition ) {
+			$this->assertIsDefined( $definition );
+		}
 	}
 
 	/**
@@ -103,15 +115,28 @@ class CMB2_Core_Test extends CMB2_Test {
 	}
 
 	/**
-	 * @expectedException Exception
+	 * @expectedException Test_CMB2_Exception
 	 */
 	public function test_set_metabox_after_offlimits() {
-		$this->cmb->metabox['title'] = 'title';
+		try {
+			// Fyi you don't need to do an assert test here, as we are only testing the exception, so just make the call
+			$this->cmb->metabox['title'] = 'title';
+		} catch ( Exception $e ) {
+			if ( 'Exception' === get_class( $e ) ) {
+				throw new Test_CMB2_Exception( $e->getMessage(), $e->getCode() );
+			}
+		}
+	}
+
+	public function test_id_get() {
+		$cmb = new CMB2( array( 'id' => $this->cmb_id ) );
+		$this->assertEquals( $cmb->cmb_id, $this->cmb_id );
 	}
 
 	public function test_defaults_set() {
 		$cmb = new CMB2( array( 'id' => $this->cmb_id ) );
-		$this->assertEquals( $cmb->meta_box, $this->defaults );
+
+		$this->assertEquals( $this->defaults, $cmb->meta_box, print_r( array( $this->defaults, $cmb->meta_box ), true ) );
 	}
 
 	public function test_url_set() {
@@ -186,7 +211,7 @@ class CMB2_Core_Test extends CMB2_Test {
 		<form class="cmb-form" method="post" id="' . $this->cmb_id . '" enctype="multipart/form-data" encoding="multipart/form-data">
 			<input type="hidden" name="object_id" value="' . $this->post_id . '">
 			' . wp_nonce_field( $this->cmb->nonce(), $this->cmb->nonce(), false, false ) . '
-			<!-- Begin CMB Fields -->
+			<!-- Begin CMB2 Fields -->
 			<div class="cmb2-wrap form-table">
 				<div id="cmb2-metabox-' . $this->cmb_id . '" class="cmb2-metabox cmb-field-list">
 					function test_before_row Description test_test
@@ -204,7 +229,7 @@ class CMB2_Core_Test extends CMB2_Test {
 					testing after row
 				</div>
 			</div>
-			<!-- End CMB Fields -->
+			<!-- End CMB2 Fields -->
 			<input type="submit" name="submit-cmb" value="Save" class="button-primary">
 		</form>
 		';
@@ -255,12 +280,12 @@ class CMB2_Core_Test extends CMB2_Test {
 		$this->assertInstanceOf( 'CMB2_Option', cmb2_options( 'test' ) );
 	}
 
-	function test_boxes_get_all() {
+	public function test_boxes_get_all() {
 		$this->assertContainsOnlyInstancesOf( 'CMB2', CMB2_Boxes::get_all() );
 	}
 
-	function test_boxes_get() {
-		new CMB2_for_testing( $this->metabox_array2 );
+	public function test_boxes_get() {
+		new Test_CMB2_Object( $this->metabox_array2 );
 
 		// Retrieve the instance
 		$cmb = cmb2_get_metabox( 'test2' );
@@ -269,7 +294,7 @@ class CMB2_Core_Test extends CMB2_Test {
 		$this->assertEquals( $after_args_parsed, $cmb->meta_box );
 	}
 
-	function test_update_field_property() {
+	public function test_update_field_property() {
 		// Retrieve a CMB2 instance
 		$cmb = cmb2_get_metabox( 'test2' );
 
@@ -458,13 +483,79 @@ class CMB2_Core_Test extends CMB2_Test {
 		), $cmb->prop( 'fields' ) );
 	}
 
+	public function test_get_sanitized_values() {
+		// Set our object id. Do this to test that it doesn't get broken
+		$this->cmb->object_id( $this->post_id );
+
+		// Add another field to test that multiple field sanitized vals will be returned.
+		$this->cmb->add_field( array(
+			'name' => 'another field',
+			'type' => 'textrea',
+			'id'   => 'another_field',
+		) );
+
+		// add some xss for good measure
+		$dirty_val   = 'test<html><stuff><script>xss</script><a href="http://xssattackexamples.com/">Click to Download</a>';
+		$cleaned_val = sanitize_text_field( $dirty_val );
+
+		// Values to sanitize
+		$vals = array(
+			'test_test'     => $dirty_val,
+			'another_field' => $dirty_val,
+		);
+
+		// Expected clean val
+		$expected = array(
+			'test_test'     => $cleaned_val,
+			'another_field' => $cleaned_val
+		);
+
+		// Verify sanitization works
+		$this->assertEquals( $expected, cmb2_get_metabox_sanitized_values( $this->cmb_id, $vals ) );
+
+		// Then verify that the object id was properly returned.
+		$this->assertEquals( $this->post_id, $this->cmb->object_id() );
+
+		$meta_values = get_post_meta( $this->post_id );
+
+		// And verify that the post-meta was not saved to the post
+		$this->assertTrue( ! isset( $meta_values['test_test'], $meta_values['another_field'] ) );
+	}
+
+	public function test_get_field() {
+		$cmb = new CMB2( $this->metabox_array );
+
+		$field = $cmb->get_field( 'test_test' );
+		$this->assertInstanceOf( 'CMB2_Field', $field );
+	}
+
+	public function test_disable_save_fields() {
+		$this->assertTrue( $this->cmb->prop( 'save_fields' ) );
+		$args = $this->metabox_array;
+		$args['save_fields'] = false;
+		$cmb = new CMB2( $args );
+		$this->assertFalse( $cmb->prop( 'save_fields' ) );
+	}
+
 }
 
 /**
  * Simply allows access to the mb_defaults protected property (for testing)
  */
-class CMB2_for_testing extends CMB2 {
+class Test_CMB2_Object extends CMB2 {
 	public function get_metabox_defaults() {
 		return $this->mb_defaults;
+	}
+}
+
+/**
+ * Custom exception class because PHPunit < 3.7 has the following error:
+ * "InvalidArgumentException: You must not expect the generic exception class."
+ *
+ * @link http://stackoverflow.com/a/10744841
+ */
+class Test_CMB2_Exception extends Exception {
+	public function __construct( $message = null, $code = 0, Exception $previous = null ) {
+		parent::__construct( $message, $code );
 	}
 }

@@ -1,5 +1,16 @@
 <?php
-
+/**
+ * Handles hooking CMB2 forms/metaboxes into the post/attachement/user screens
+ * and handles hooking in and saving those fields.
+ *
+ * @since  2.0.0
+ *
+ * @category  WordPress_Plugin
+ * @package   CMB2
+ * @author    WebDevStudios
+ * @license   GPL-2.0+
+ * @link      http://webdevstudios.com
+ */
 class CMB2_hookup {
 
 	/**
@@ -109,7 +120,7 @@ class CMB2_hookup {
 	}
 
 	/**
-	 * Registers scripts and styles for CMB
+	 * Registers scripts and styles for CMB2
 	 * @since  1.0.0
 	 */
 	public static function register_scripts() {
@@ -132,10 +143,10 @@ class CMB2_hookup {
 			) );
 		}
 
-		wp_register_script( 'cmb-timepicker', cmb2_utils()->url( 'js/jquery.timePicker.min.js' ) );
+		wp_register_script( 'jquery-ui-datetimepicker', cmb2_utils()->url( 'js/jquery-ui-timepicker-addon.min.js' ), array( 'jquery-ui-slider' ), CMB2_VERSION );
 
 		// scripts required for cmb
-		$scripts = array( 'jquery', 'jquery-ui-core', 'jquery-ui-datepicker', 'cmb-timepicker', 'wp-color-picker' );
+		$scripts = array( 'jquery', 'jquery-ui-core', 'jquery-ui-datepicker', 'jquery-ui-datetimepicker', 'wp-color-picker' );
 		// styles required for cmb
 		$styles = array( 'wp-color-picker' );
 
@@ -165,11 +176,16 @@ class CMB2_hookup {
 					'clearText'       => __( 'Clear', 'cmb2' ),
 				),
 				'time_picker'  => array(
-					'startTime'   => '00:00',
-					'endTime'     => '23:59',
-					'show24Hours' => false,
-					'separator'   => ':',
-					'step'        => 30,
+					'timeOnlyTitle' => __( 'Choose Time', 'cmb2' ),
+					'timeText'      => __( 'Time', 'cmb2' ),
+					'hourText'      => __( 'Hour', 'cmb2' ),
+					'minuteText'    => __( 'Minute', 'cmb2' ),
+					'secondText'    => __( 'Second', 'cmb2' ),
+					'currentText'   => __( 'Now', 'cmb2' ),
+					'closeText'     => __( 'Done', 'cmb2' ),
+					'timeFormat'    => __( 'hh:mm TT', 'cmb2' ),
+					'controlType'   => 'select',
+					'stepMinute'    => 5,
 				),
 			),
 			'strings' => array(
@@ -188,7 +204,7 @@ class CMB2_hookup {
 	}
 
 	/**
-	 * Enqueues scripts and styles for CMB
+	 * Enqueues scripts and styles for CMB2
 	 * @since  1.0.0
 	 */
 	public function do_scripts( $hook ) {
@@ -228,13 +244,24 @@ class CMB2_hookup {
 			return;
 		}
 
-		foreach ( $this->cmb->prop( 'object_types' ) as $page ) {
+		foreach ( $this->cmb->prop( 'object_types' ) as $post_type ) {
 
 			if ( $this->cmb->prop( 'closed' ) ) {
-				add_filter( "postbox_classes_{$page}_{$this->cmb->cmb_id}", array( $this, 'close_metabox_class' ) );
+				add_filter( "postbox_classes_{$post_type}_{$this->cmb->cmb_id}", array( $this, 'close_metabox_class' ) );
 			}
 
-			add_meta_box( $this->cmb->cmb_id, $this->cmb->prop( 'title' ), array( $this, 'post_metabox' ), $page, $this->cmb->prop( 'context' ), $this->cmb->prop( 'priority' ) );
+			/**
+			 * To keep from registering an actual post-screen metabox,
+			 * omit the 'title' attribute from the metabox registration array.
+			 *
+			 * (WordPress will not display metaboxes without titles anyway)
+			 *
+			 * This is a good solution if you want to output your metaboxes
+			 * Somewhere else in the post-screen
+			 */
+			if ( $this->cmb->prop( 'title' ) ) {
+				add_meta_box( $this->cmb->cmb_id, $this->cmb->prop( 'title' ), array( $this, 'post_metabox' ), $post_type, $this->cmb->prop( 'context' ), $this->cmb->prop( 'priority' ) );
+			}
 		}
 	}
 
@@ -299,8 +326,9 @@ class CMB2_hookup {
 		$post_type = $post ? $post->post_type : get_post_type( $post_id );
 
 		$do_not_pass_go = (
+			! $this->cmb->prop( 'save_fields' )
 			// check nonce
-			! isset( $_POST[ $this->cmb->nonce() ] )
+			|| ! isset( $_POST[ $this->cmb->nonce() ] )
 			|| ! wp_verify_nonce( $_POST[ $this->cmb->nonce() ], $this->cmb->nonce() )
 			// check if autosave
 			|| defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE
@@ -326,8 +354,9 @@ class CMB2_hookup {
 	public function save_user( $user_id ) {
 		// check permissions
 		if (
+			! $this->cmb->prop( 'save_fields' )
 			// check nonce
-			! isset( $_POST[ $this->cmb->nonce() ] )
+			|| ! isset( $_POST[ $this->cmb->nonce() ] )
 			|| ! wp_verify_nonce( $_POST[ $this->cmb->nonce() ], $this->cmb->nonce() )
 		) {
 			// @todo more hardening?
@@ -340,10 +369,26 @@ class CMB2_hookup {
 	/**
 	 * Determines if metabox should be shown in current context
 	 * @since  2.0.0
-	 * @return bool
+	 * @return bool Whether metabox should be added/shown
 	 */
 	public function show_on() {
-		return (bool) apply_filters( 'cmb2_show_on', true, $this->cmb->meta_box, $this->cmb );
+		$show = true;
+
+		// If metabox is requesting to be conditionally shown
+		if ( is_callable( $this->cmb->prop( 'show_on_cb' ) ) ) {
+			$show = (bool) call_user_func( $this->cmb->prop( 'show_on_cb' ), $this->cmb );
+		}
+
+		/**
+		 * Filter to determine if metabox should show. Default is true
+		 *
+		 * @param array  $show          Default is true, show the metabox
+		 * @param mixed  $meta_box_args Array of the metabox arguments
+		 * @param mixed  $cmb           The CMB2 instance
+		 */
+		$show = (bool) apply_filters( 'cmb2_show_on', $show, $this->cmb->meta_box, $this->cmb );
+
+		return $show;
 	}
 
 	/**
@@ -366,7 +411,7 @@ class CMB2_hookup {
 	}
 
 	/**
-	 * Includes CMB styles
+	 * Includes CMB2 styles
 	 * @since  2.0.0
 	 */
 	public static function enqueue_cmb_css() {
@@ -379,7 +424,7 @@ class CMB2_hookup {
 	}
 
 	/**
-	 * Includes CMB JS
+	 * Includes CMB2 JS
 	 * @since  2.0.0
 	 */
 	public static function enqueue_cmb_js() {
