@@ -56,6 +56,10 @@ function cb_team_member_shortcode() {
 
 					$output .= '<div class="team-member__bio">' . get_the_content() . '</div>';
 
+					if ( isset( $team_member_custom_fields['_cb_team_member_bio_post_id'][0] ) && ! empty( $team_member_custom_fields['_cb_team_member_bio_post_id'][0] ) ) {
+						$output .= '<p><a href="' . get_permalink( $team_member_custom_fields['_cb_team_member_bio_post_id'][0] ) . '">' . __( 'Read our interview with', 'cb' ) . ' ' . get_the_title() . '.</a></p>';
+					}
+
 				$output .= '</div>';
 
 			$output .= '</div>';
